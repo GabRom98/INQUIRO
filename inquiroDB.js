@@ -9,6 +9,6 @@ AWS.config.update({ region: process.env.AWS_REGION });
 
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-const TABLE = process.env.DYNAMODB_TABLE || 'INQUIRObd';
+const TABLE = process.env.DYNAMODB_TABLE || 'InquiroDB';
 
 export { dynamodb, TABLE };

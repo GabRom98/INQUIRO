@@ -3,6 +3,7 @@ import { dynamodb } from "../../inquiroDB.js"
 const TABLE_ENCUESTAS = process.env.DYNAMODB_TABLE_ENCUESTAS;
 
 const crearEncuestaRepository = async (encuestaData) => {
+  console.log(TABLE_ENCUESTAS)
   const params = {
         TableName: TABLE_ENCUESTAS,
         Item: encuestaData,  
@@ -35,12 +36,66 @@ const obtenerEncuestasPorPkRepository = async (pk) => {
   }
 };
 
+const obtenerTodosLosEmailsClienteRepository = async () => {
+    const params = {
+        TableName: TABLE_ENCUESTAS,
+        ProjectionExpression: 'InquiroPK'
+    };
+
+  try {
+    const result = await dynamodb.scan(params).promise();
+    return result.Items; 
+  } catch (error) {
+    console.log("No se pudieron obtener los e-mails: " + error.message)
+    throw new Error(`Error al obtener e-mails: ${error.message}`);
+  }
+};
+
+const obtenerTodasLasEncuestasRepository = async () => {
+    const params = {
+        TableName: TABLE_ENCUESTAS,
+        ProjectionExpression: 'InquiroPK, InquiroSK, preguntas, fechaCreacion, titulo'
+    };
+
+  try {
+    const result = await dynamodb.scan(params).promise();
+    return result.Items; 
+  } catch (error) {
+    console.log("No se pudieron obtener las encuestas: " + error.message)
+    throw new Error(`Error al obtener las encuestas: ${error.message}`);
+  }
+};
+
 const obtenerEncuestaPorSkRepository = async (pk,sk) => {
     const params = {
         TableName: TABLE_ENCUESTAS,
-        KeyConditionExpression: 'InquiroPK = :pk and InquieroSK = :sk', 
+        KeyConditionExpression: 'InquiroPK = :pk and InquiroSK = :sk', 
         ExpressionAttributeValues: {
         ':pk': pk,    
+        ':sk': sk, 
+    },
+};
+
+  try {
+    const result = await dynamodb.query(params).promise();
+
+    if (!result.Items || result.Items.length === 0) {
+      throw new Error(`No se encontró ninguna encuesta con la SK: ${sk}`);
+    }
+
+    return result.Items; 
+  } catch (error) {
+    console.log(`No se pudo obtener encuesta por SK ${sk}: ` + error.message)
+    throw new Error(`Error al obtener la encuesta por SK ${sk} : ${error.message}`);
+  }
+};
+
+const obtenerEncuestaPorSkGSIRepository= async (sk) => {
+    const params = {
+        TableName: TABLE_ENCUESTAS,
+        IndexName: "InquiroSK-index",
+        KeyConditionExpression: 'InquiroSK = :sk', 
+        ExpressionAttributeValues: {
         ':sk': sk, 
     },
   };
@@ -59,12 +114,13 @@ const obtenerEncuestaPorSkRepository = async (pk,sk) => {
   }
 };
 
-const actualizarEncuestaRepository = async (InquiroPK, InquieroSK, titulo, preguntas) => {
+
+const actualizarEncuestaRepository = async (InquiroPK, InquiroSK, titulo, preguntas) => {
   const params = {
     TableName: TABLE_ENCUESTAS,  
     Key: {
       'InquiroPK': InquiroPK,  
-      'InquieroSK': InquieroSK,   
+      'InquiroSK': InquiroSK,   
     },
     UpdateExpression: 'SET titulo = :titulo, preguntas = :preguntas',
     ExpressionAttributeValues: {
@@ -84,4 +140,4 @@ const actualizarEncuestaRepository = async (InquiroPK, InquieroSK, titulo, pregu
   }
 };
 
-export { crearEncuestaRepository, obtenerEncuestasPorPkRepository, obtenerEncuestaPorSkRepository, actualizarEncuestaRepository };
+export { crearEncuestaRepository, obtenerEncuestasPorPkRepository, obtenerTodasLasEncuestasRepository,obtenerEncuestaPorSkRepository,obtenerEncuestaPorSkGSIRepository, actualizarEncuestaRepository, obtenerTodosLosEmailsClienteRepository };

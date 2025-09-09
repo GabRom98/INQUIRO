@@ -1,6 +1,6 @@
-import { crearEncuestaService, obtenerEncuestasPorPkService, obtenerEncuestaPorSkService, actualizarEncuestaService } from '../service/encuestasService.js';
-import generarNuevaEncuesta from "../utils/generarNuevaEncuesta.js"
+import { crearEncuestaService, obtenerTodosLosEmailsClienteService,obtenerTodasLasEncuestasService,obtenerEncuestasPorPkService, obtenerEncuestaPorSkService, obtenerEncuestaPorSkGSIService, actualizarEncuestaService } from '../service/encuestasService.js';
 import { v4 as uuidv4 } from "uuid"
+import generarNuevaEncuesta from "../utils/generarNuevaEncuesta.js"
 
 //Hoy en dia las validaciones no tienen porque ser tan fuertes. Ya que lo manejaremos nosotros a la app.
 
@@ -9,7 +9,7 @@ const crearEncuestaController = async (req, res) => {
  const idEncuesta = uuidv4();
 
   if ( !email || !titulo || !Array.isArray(preguntas) || preguntas.length === 0) {
-    return res.status(400).json({ message: 'Datos invalidos' });
+    return res.status(400).json({ message: 'Datos inválidos' });
   }
 
   const nuevaEncuesta = generarNuevaEncuesta(email, titulo, preguntas,idEncuesta);
@@ -17,6 +17,31 @@ const crearEncuestaController = async (req, res) => {
   try {
     const encuestaCreada = await crearEncuestaService(nuevaEncuesta);
     res.status(201).json(encuestaCreada);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const obtenerTodosLosEmailsClienteController = async (req, res) => {
+
+  try {
+    const emails = await obtenerTodosLosEmailsClienteService();
+    if (emails.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron emails de cliente' });
+    }
+    res.status(200).json({ emails });  
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const obtenerTodasLasEncuestasController = async (req, res) => {
+  try {
+    const encuestas = await obtenerTodasLasEncuestasService();
+    if (encuestas.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron encuestas.' });
+    }
+    res.status(200).json({ encuestas });  
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -56,15 +81,31 @@ const obtenerEncuestaPorSkController = async (req, res) => {
   }
 };
 
-const actualizarEncuestaController = async (req, res) => {
- const { InquiroPK, InquieroSK, titulo, preguntas } = req.body;
+const obtenerEncuestaPorSkGSIController = async (req, res) => {
+ const { sk } = req.params;
 
-  if ( !InquiroPK || !InquieroSK || !titulo || !Array.isArray(preguntas) || preguntas.length === 0 ) {
+  if ( !sk ) {
+    return res.status(400).json({ message: 'No se ingreso un id valido' });
+  }
+
+  try {
+    const encuesta = await obtenerEncuestaPorSkGSIService(sk);
+
+    res.status(200).json({ encuesta });  
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const actualizarEncuestaController = async (req, res) => {
+ const { InquiroPK, InquiroSK, titulo, preguntas } = req.body;
+
+  if ( !InquiroPK || !InquiroSK || !titulo || !Array.isArray(preguntas) || preguntas.length === 0 ) {
     return res.status(400).json({ message: 'Datos incompletos para la actualizacion.' });
   }
 
   try {
-    const encuestaNueva = await actualizarEncuestaService(InquiroPK, InquieroSK, titulo, preguntas);
+    const encuestaNueva = await actualizarEncuestaService(InquiroPK, InquiroSK, titulo, preguntas);
 
     res.status(200).json({ encuestaNueva });  
   } catch (error) {
@@ -72,4 +113,4 @@ const actualizarEncuestaController = async (req, res) => {
   }
 };
 
-export { crearEncuestaController, obtenerEncuestasPorPkController, obtenerEncuestaPorSkController, actualizarEncuestaController };
+export { crearEncuestaController, obtenerTodosLosEmailsClienteController, obtenerTodasLasEncuestasController,obtenerEncuestasPorPkController, obtenerEncuestaPorSkController, obtenerEncuestaPorSkGSIController,actualizarEncuestaController };

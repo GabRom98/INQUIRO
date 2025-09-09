@@ -1,7 +1,7 @@
 const generarNuevaEncuesta = (email,titulo,preguntas,idEncuesta) => {
     return {
     InquiroPK: email,
-    InquieroSK: idEncuesta,
+    InquiroSK: idEncuesta,
     titulo,
     preguntas,
     fechaCreacion: new Date().toISOString()
