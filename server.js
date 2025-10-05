@@ -3,6 +3,9 @@ import mainRouter from "./src/routes/mainRouter.js";
 import morgan from "morgan";
 import cors from 'cors';
 
+import swaggerUi from 'swagger-ui-express'
+import swaggerSpec from "./src/config/swagger.js";
+
 const server = express();
 
 const HOSTNAME = '127.0.0.1';
@@ -15,6 +18,9 @@ const corsOptions = {
   credentials: true,
 };
 
+// Endpoint Swagger
+server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 server.use(cors(corsOptions));
 
 server.use(express.json())
@@ -23,5 +29,5 @@ server.use(morgan('combined'));
 server.use(mainRouter);
 
 server.listen(PORT,HOSTNAME,() => {
-    console.log(`Servidor corriendo en http://${HOSTNAME}:${PORT}`);
+    console.log(`🚀 Servidor corriendo en http://${HOSTNAME}:${PORT}/api-docs`);
 })
