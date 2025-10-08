@@ -1,5 +1,5 @@
-import { obtenerTodosLosEmailsClienteRepository, obtenerTodasLasEncuestasRepository,crearEncuestaRepository, obtenerEncuestasPorPkRepository, obtenerEncuestaPorSkRepository, obtenerEncuestaPorSkGSIRepository,actualizarEncuestaRepository } from '../repository/encuestasRepository.js';
-
+import { obtenerTodosLosEmailsClienteRepository,cambiarEstadoEncuestaRepository, obtenerTodasLasEncuestasRepository,crearEncuestaRepository, obtenerEncuestasPorPkRepository, obtenerEncuestaPorSkRepository, obtenerEncuestaPorSkGSIRepository,actualizarEncuestaRepository,eliminarEncuestaRepository } from '../repository/encuestasRepository.js';
+import { dynamodb,TABLE } from '../../inquiroDB.js';
 const crearEncuestaService = async (encuestaData) => {
   try {
     const nuevaEncuesta = await crearEncuestaRepository(encuestaData);
@@ -60,15 +60,48 @@ const obtenerEncuestaPorSkGSIService = async (sk) => {
     throw new Error(error.message);
   }
 };
+const cambiarEstadoEncuestaService = async (pk, sk, nuevoEstado) => {
+  try {
+    const estadosPermitidos = ["pausada", "cerrada"];
+    if (!estadosPermitidos.includes(nuevoEstado)) {
+      throw new Error("Estado inválido. Solo se permite 'pausada' o 'cerrada'.");
+    }
 
+    const result = await cambiarEstadoEncuestaRepository(pk, sk, nuevoEstado);
+    return result;
+  } catch (error) {
+    throw new Error(`Error en el servicio al cambiar el estado: ${error.message}`);
+  }
+};
+
+
+const eliminarEncuestaService = async (InquiroPK, InquiroSK) => {
+  try {
+    return await eliminarEncuestaRepository(InquiroPK, InquiroSK);
+  } catch (error) {
+    throw new Error(`Error en el servicio al eliminar la encuesta: ${error.message}`);
+  }
+};
 const actualizarEncuestaService = async (InquiroPK, InquiroSK, titulo, preguntas) => {
   try {
-    const encuesta = await actualizarEncuestaRepository(InquiroPK, InquiroSK, titulo, preguntas);
+    const preguntasValidadas = preguntas.map((p) => {
+      if (!p.tipoPregunta || !p.pregunta) {
+        throw new Error("Cada pregunta debe tener el tipo de pregunta y ningun campo vacio.");
+      }
+      if (p.tipoPregunta === "opciones_radio" && (!p.opciones || p.opciones.length === 0)) {
+        throw new Error("Las preguntas de este tipo deben tener opciones.");
+      }
+      return {
+        tipoPregunta: p.tipoPregunta,
+        pregunta: p.pregunta,
+        opciones: p.opciones || [],
+      };
+    });
 
-    return encuesta;
+    return await actualizarEncuestaRepository(InquiroPK, InquiroSK, titulo, preguntasValidadas);
   } catch (error) {
     throw new Error(error.message);
   }
 };
 
-export { crearEncuestaService, obtenerTodosLosEmailsClienteService,obtenerTodasLasEncuestasService,obtenerEncuestasPorPkService, obtenerEncuestaPorSkService,obtenerEncuestaPorSkGSIService, actualizarEncuestaService };
+export { crearEncuestaService, obtenerTodosLosEmailsClienteService,obtenerTodasLasEncuestasService,obtenerEncuestasPorPkService, obtenerEncuestaPorSkService,obtenerEncuestaPorSkGSIService, actualizarEncuestaService,cambiarEstadoEncuestaService, eliminarEncuestaService };

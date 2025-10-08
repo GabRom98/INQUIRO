@@ -2,8 +2,10 @@ import express from "express";
 import mainRouter from "./src/routes/mainRouter.js";
 import morgan from "morgan";
 import cors from 'cors';
+import dotenv from "dotenv";
 
 const server = express();
+dotenv.config();
 
 const HOSTNAME = '127.0.0.1';
 const PORT = process.env.PORT || 8080;

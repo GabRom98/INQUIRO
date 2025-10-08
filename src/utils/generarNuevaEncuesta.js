@@ -1,12 +1,14 @@
-const generarNuevaEncuesta = (email,titulo,preguntas,idEncuesta) => {
+const generarNuevaEncuesta = (email, titulo, preguntas, idEncuesta) => {
     return {
-    InquiroPK: email,
-    InquiroSK: idEncuesta,
-    titulo,
-    preguntas,
-    fechaCreacion: new Date().toISOString()
-  };
+        InquiroPK: email,
+        InquiroSK: idEncuesta,
+        titulo,
+        preguntas,
+        fechaCreacion: new Date().toISOString(),
+        estado: "activa"  
+    };
 }
+
 
 export default generarNuevaEncuesta; 
 
