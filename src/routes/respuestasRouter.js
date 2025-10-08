@@ -10,17 +10,43 @@ const respuestasRouter = Router();
  *   get:
  *     tags:
  *      - Respuestas
- *     summary: Obtiene todas las respuestas de una encuesta
+ *     summary: Obtiene todas las respuestas asociadas a una encuesta
+ *     description: Retorna todas las respuestas guardadas para una encuesta específica, identificada por su `id` (respuestaInquiroPK).
  *     parameters:
  *       - name: id
  *         in: path
  *         required: true
- *         description: ID de la encuesta (respuestaInquiroPK)
+ *         description: Identificador de la encuesta (respuestaInquiroPK).
  *         schema:
  *           type: string
+ *           example: 65ba9d5a-cf6d-4524-ab2d-d6041582e998
  *     responses:
  *       200:
- *         description: Respuestas obtenidas exitosamente
+ *         description: Respuestas obtenidas correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   fechaRespuesta:
+ *                     type: string
+ *                     format: date-time
+ *                     description: Fecha en la que se guardó el conjunto de respuestas.
+ *                     example: 2025-10-07T23:50:59.083Z
+ *                   respuestas:
+ *                     type: array
+ *                     description: Lista de preguntas y respuestas.
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         pregunta:
+ *                           type: string
+ *                           example: xdxdxd
+ *                         respuesta:
+ *                           type: string
+ *                           example: respuesta
  *       400:
  *         description: ID inválido o no proporcionado
  *       500:
@@ -34,7 +60,8 @@ respuestasRouter.get('/:id', obtenerRespuestasController);
  *   post:
  *     tags:
  *      - Respuestas
- *     summary: Crea una nueva respuesta
+ *     summary: Crea un nuevo conjunto de respuestas para una encuesta
+ *     description: Crea un nuevo registro de respuestas en DynamoDB asociado a una encuesta (referenciada por `respuestaInquiroPK`).
  *     requestBody:
  *       required: true
  *       content:
@@ -47,15 +74,52 @@ respuestasRouter.get('/:id', obtenerRespuestasController);
  *             properties:
  *               respuestaInquiroPK:
  *                 type: string
- *                 example: "1234-encuesta"
+ *                 description: Identificador de la encuesta (InquiroSK o ID de la encuesta).
+ *                 example: 65ba9d5a-cf6d-4524-ab2d-d6041582e998
  *               respuestas:
  *                 type: array
+ *                 description: Lista de preguntas y sus respuestas.
  *                 items:
- *                   type: string
- *                 example: ["Sí", "No", "Tal vez"]
+ *                   type: object
+ *                   properties:
+ *                     pregunta:
+ *                       type: string
+ *                       example: xdxdxd
+ *                     respuesta:
+ *                       type: string
+ *                       example: respuesta
  *     responses:
  *       200:
- *         description: Respuesta creada exitosamente
+ *         description: Respuestas creadas exitosamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 respuestasInquiroPK:
+ *                   type: string
+ *                   description: Identificador de la encuesta a la que pertenecen las respuestas.
+ *                   example: 65ba9d5a-cf6d-4524-ab2d-d6041582e998
+ *                 respuestasInquiroSK:
+ *                   type: string
+ *                   description: Identificador único generado para este conjunto de respuestas.
+ *                   example: badc78eb-ef9d-49a3-b482-a68d6b518cc7
+ *                 respuestas:
+ *                   type: array
+ *                   description: Lista de respuestas registradas.
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       pregunta:
+ *                         type: string
+ *                         example: xdxdxd
+ *                       respuesta:
+ *                         type: string
+ *                         example: respuesta
+ *                 fechaRespuesta:
+ *                   type: string
+ *                   format: date-time
+ *                   example: 2025-10-07T23:49:36.392Z
  *       400:
  *         description: Datos inválidos
  *       500:

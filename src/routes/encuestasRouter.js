@@ -24,16 +24,39 @@ const encuestasRouter = Router();
  *                   items:
  *                     type: object
  *                     properties:
- *                       InquiroPK:
- *                         type: string
- *                         example: usuario@email.com
- *                       InquiroSK:
- *                         type: string
- *                         example: 1234-uuid
  *                       titulo:
  *                         type: string
+ *                         example: Sabores
+ *                       InquiroPK:
+ *                         type: string
+ *                         example: email@h.com
  *                       fechaCreacion:
  *                         type: string
+ *                         format: date-time
+ *                         example: 2025-10-05T18:57:47.675Z
+ *                       preguntas:
+ *                         type: array
+ *                         description: Lista de preguntas de la encuesta
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             tipoPregunta:
+ *                               type: string
+ *                               description: Tipo de pregunta (texto, radio, etc.)
+ *                               example: radio
+ *                             pregunta:
+ *                               type: string
+ *                               description: Texto de la pregunta
+ *                               example: color favorito?
+ *                             opciones:
+ *                               type: array
+ *                               description: Opciones de respuesta (vacías si es texto libre)
+ *                               items:
+ *                                 type: string
+ *                               example: ["azul", "verde", "rojo"]
+ *                       InquiroSK:
+ *                         type: string
+ *                         example: xxxxx-xxxxx-xxx-xxxxx-xxxxxxxxx
  *       404:
  *         description: No se encontraron encuestas.
  *       500:
@@ -75,14 +98,22 @@ encuestasRouter.get('/email/all', obtenerTodosLosEmailsClienteController)
  *     tags:
  *       - Encuestas
  *     summary: Obtiene una encuesta usando su SK desde el índice GSI
+/**
+ * @openapi
+ * /encuestas/{sk}:
+ *   get:
+ *     tags:
+ *       - Encuestas
+ *     summary: Obtiene una encuesta específica por su SK (GSI)
+ *     description: Busca en DynamoDB una encuesta a través del índice secundario global **InquiroSK-index** usando el valor de SK proporcionado.
  *     parameters:
  *       - name: sk
  *         in: path
  *         required: true
- *         description: ID único (SK) de la encuesta.
+ *         description: Identificador único (Sort Key) de la encuesta.
  *         schema:
  *           type: string
- *           example: "1a2b-uuid-4c5d"
+ *           example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
  *     responses:
  *       200:
  *         description: Encuesta obtenida correctamente.
@@ -96,14 +127,38 @@ encuestasRouter.get('/email/all', obtenerTodosLosEmailsClienteController)
  *                   items:
  *                     type: object
  *                     properties:
- *                       InquiroPK:
- *                         type: string
  *                       titulo:
  *                         type: string
+ *                         example: Sabores
  *                       preguntas:
  *                         type: array
+ *                         description: Preguntas que componen la encuesta
  *                         items:
- *                           type: string
+ *                           type: object
+ *                           properties:
+ *                             tipoPregunta:
+ *                               type: string
+ *                               example: radio
+ *                             pregunta:
+ *                               type: string
+ *                               example: color favorito?
+ *                             opciones:
+ *                               type: array
+ *                               items:
+ *                                 type: string
+ *                               example: ["azul", "verde", "rojo"]
+ *                       InquiroPK:
+ *                         type: string
+ *                         description: Clave primaria (email del cliente)
+ *                         example: email@h.com
+ *                       fechaCreacion:
+ *                         type: string
+ *                         format: date-time
+ *                         example: 2025-10-05T18:57:47.675Z
+ *                       InquiroSK:
+ *                         type: string
+ *                         description: Clave de ordenamiento (UUID único)
+ *                         example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
  *       400:
  *         description: Parámetro SK inválido.
  *       500:
@@ -122,13 +177,54 @@ encuestasRouter.get('/:sk', obtenerEncuestaPorSkGSIController)
  *       - name: email
  *         in: path
  *         required: true
- *         description: Correo electrónico del cliente
+ *         description: Correo electrónico del cliente cuyas encuestas se desean obtener.
  *         schema:
  *           type: string
- *           example: cliente@email.com
+ *           example: email@h.com
  *     responses:
  *       200:
- *         description: Lista de encuestas del usuario obtenida correctamente
+ *         description: Lista de encuestas obtenida correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 encuestas:
+ *                   type: array
+ *                   description: Lista de encuestas asociadas al correo proporcionado.
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       titulo:
+ *                         type: string
+ *                         example: Sabores
+ *                       InquiroPK:
+ *                         type: string
+ *                         example: email@h.com
+ *                       fechaCreacion:
+ *                         type: string
+ *                         format: date-time
+ *                         example: 2025-10-05T18:57:47.675Z
+ *                       preguntas:
+ *                         type: array
+ *                         description: Preguntas incluidas en la encuesta.
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             tipoPregunta:
+ *                               type: string
+ *                               example: radio
+ *                             pregunta:
+ *                               type: string
+ *                               example: color favorito?
+ *                             opciones:
+ *                               type: array
+ *                               items:
+ *                                 type: string
+ *                               example: ["azul", "verde", "rojo"]
+ *                       InquiroSK:
+ *                         type: string
+ *                         example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
  *       404:
  *         description: No se encontraron encuestas para este correo.
  *       500:
@@ -147,18 +243,61 @@ encuestasRouter.get('/email/:email', obtenerEncuestasPorPkController)
  *       - name: email
  *         in: path
  *         required: true
+ *         description: Correo electrónico asociado a la encuesta.
  *         schema:
  *           type: string
- *           example: cliente@email.com
+ *           example: email@h.com
  *       - name: sk
  *         in: path
  *         required: true
+ *         description: Identificador único (Sort Key) de la encuesta.
  *         schema:
  *           type: string
- *           example: "uuid-encuesta-123"
+ *           example: 65ba9d5a-cf6d-4524-ab2d-d6041582e998
  *     responses:
  *       200:
- *         description: Encuesta encontrada
+ *         description: Encuesta obtenida correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 encuesta:
+ *                   type: array
+ *                   description: Lista con una encuesta (si existe)
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       titulo:
+ *                         type: string
+ *                         example: Sabores
+ *                       InquiroPK:
+ *                         type: string
+ *                         example: email@h.com
+ *                       fechaCreacion:
+ *                         type: string
+ *                         format: date-time
+ *                         example: 2025-10-05T18:57:47.675Z
+ *                       preguntas:
+ *                         type: array
+ *                         description: Preguntas que componen la encuesta
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             tipoPregunta:
+ *                               type: string
+ *                               example: radio
+ *                             pregunta:
+ *                               type: string
+ *                               example: color favorito?
+ *                             opciones:
+ *                               type: array
+ *                               items:
+ *                                 type: string
+ *                               example: ["azul", "verde", "rojo"]
+ *                       InquiroSK:
+ *                         type: string
+ *                         example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
  *       400:
  *         description: Datos inválidos
  *       404:
@@ -175,7 +314,7 @@ encuestasRouter.get('/email/:email/id/:sk', obtenerEncuestaPorSkController)
  *     tags:
  *       - Encuestas
  *     summary: Crea una nueva encuesta
- *     requestBody:
+*     requestBody:
  *       required: true
  *       content:
  *         application/json:
@@ -188,18 +327,67 @@ encuestasRouter.get('/email/:email/id/:sk', obtenerEncuestaPorSkController)
  *             properties:
  *               email:
  *                 type: string
- *                 example: usuario@email.com
+ *                 example: mimail@he.com
  *               titulo:
  *                 type: string
- *                 example: Encuesta de satisfacción
+ *                 example: prueba
  *               preguntas:
  *                 type: array
+ *                 description: Lista de preguntas incluidas en la encuesta.
  *                 items:
- *                   type: string
- *                 example: ["¿Te gustó el producto?", "¿Recomendarías la app?"]
+ *                   type: object
+ *                   properties:
+ *                     tipoPregunta:
+ *                       type: string
+ *                       example: radio
+ *                     pregunta:
+ *                       type: string
+ *                       example: probando diferentes cosas?
+ *                     opciones:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example: ["1", "2", "3"]
  *     responses:
  *       201:
- *         description: Encuesta creada exitosamente
+ *         description: Encuesta creada exitosamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 InquiroPK:
+ *                   type: string
+ *                   description: Clave primaria (email del usuario).
+ *                   example: mimail@he.com
+ *                 InquiroSK:
+ *                   type: string
+ *                   description: Identificador único (UUID) generado para la encuesta.
+ *                   example: 1566136b-0a1c-4f5b-90ba-38f67ea55fb2
+ *                 titulo:
+ *                   type: string
+ *                   example: prueba
+ *                 preguntas:
+ *                   type: array
+ *                   description: Lista de preguntas de la encuesta creada.
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       tipoPregunta:
+ *                         type: string
+ *                         example: texto
+ *                       pregunta:
+ *                         type: string
+ *                         example: probando?
+ *                       opciones:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                         example: []
+ *                 fechaCreacion:
+ *                   type: string
+ *                   format: date-time
+ *                   example: 2025-10-07T23:26:21.163Z
  *       400:
  *         description: Datos inválidos
  *       500:
@@ -214,6 +402,7 @@ encuestasRouter.post('/', crearEncuestaController);
  *     tags:
  *       - Encuestas
  *     summary: Actualiza una encuesta existente
+*     description: Actualiza los datos de una encuesta existente en DynamoDB. Se requiere pasar la PK (email del cliente) y SK (UUID único de la encuesta), además del nuevo título y las preguntas modificadas.
  *     requestBody:
  *       required: true
  *       content:
@@ -228,21 +417,74 @@ encuestasRouter.post('/', crearEncuestaController);
  *             properties:
  *               InquiroPK:
  *                 type: string
- *                 example: cliente@email.com
+ *                 description: Clave primaria (email del cliente).
+ *                 example: email@h.com
  *               InquiroSK:
  *                 type: string
- *                 example: "uuid-encuesta-abc123"
+ *                 description: Clave de ordenamiento (UUID de la encuesta).
+ *                 example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
  *               titulo:
  *                 type: string
- *                 example: Encuesta actualizada
+ *                 description: Nuevo título de la encuesta.
+ *                 example: MEU XD
  *               preguntas:
  *                 type: array
+ *                 description: Lista de preguntas actualizadas.
  *                 items:
- *                   type: string
- *                 example: ["¿Cómo calificarías la atención?", "¿Usarías el servicio otra vez?"]
+ *                   type: object
+ *                   properties:
+ *                     tipoPregunta:
+ *                       type: string
+ *                       example: hola
+ *                     pregunta:
+ *                       type: string
+ *                       example: Que haces hoy?
+ *                     opciones:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example: [1]
  *     responses:
  *       200:
- *         description: Encuesta actualizada correctamente
+ *         description: Encuesta actualizada correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 encuestaNueva:
+ *                   type: object
+ *                   properties:
+ *                     titulo:
+ *                       type: string
+ *                       example: MEU XD
+ *                     InquiroPK:
+ *                       type: string
+ *                       example: email@h.com
+ *                     fechaCreacion:
+ *                       type: string
+ *                       format: date-time
+ *                       example: 2025-10-05T18:57:47.675Z
+ *                     preguntas:
+ *                       type: array
+ *                       description: Preguntas actualizadas de la encuesta.
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           tipoPregunta:
+ *                             type: string
+ *                             example: hola
+ *                           pregunta:
+ *                             type: string
+ *                             example: Que haces hoy?
+ *                           opciones:
+ *                             type: array
+ *                             items:
+ *                               type: string
+ *                             example: [1]
+ *                     InquiroSK:
+ *                       type: string
+ *                       example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
  *       400:
  *         description: Datos incompletos para la actualización
  *       500:
