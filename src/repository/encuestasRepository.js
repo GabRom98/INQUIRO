@@ -1,6 +1,6 @@
 import { dynamodb } from "../../inquiroDB.js"
 
-const TABLE_ENCUESTAS = process.env.DYNAMODB_TABLE_ENCUESTAS || "Encuestas";
+const TABLE_ENCUESTAS = process.env.DYNAMODB_TABLE_ENCUESTAS
 
 const crearEncuestaRepository = async (encuestaData) => {
   console.log(TABLE_ENCUESTAS)
@@ -165,7 +165,7 @@ const actualizarEncuestaRepository = async (InquiroPK, InquiroSK, titulo, pregun
 };
 const eliminarEncuestaRepository = async (InquiroPK, InquiroSK) => {
   const params = {
-    TableName: TABLE,
+    TableName: TABLE_ENCUESTAS,
     Key: {
       InquiroPK,
       InquiroSK,
