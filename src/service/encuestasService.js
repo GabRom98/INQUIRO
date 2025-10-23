@@ -61,9 +61,9 @@ const obtenerEncuestaPorSkGSIService = async (sk) => {
   }
 };
 
-const actualizarEncuestaService = async (InquiroPK, InquiroSK, titulo, preguntas) => {
+const actualizarEncuestaService = async (InquiroPK, InquiroSK, titulo, preguntas,descripcion) => {
   try {
-    const encuesta = await actualizarEncuestaRepository(InquiroPK, InquiroSK, titulo, preguntas);
+    const encuesta = await actualizarEncuestaRepository(InquiroPK, InquiroSK, titulo, preguntas,descripcion);
 
     return encuesta;
   } catch (error) {
