@@ -115,16 +115,17 @@ const obtenerEncuestaPorSkGSIRepository= async (sk) => {
 };
 
 
-const actualizarEncuestaRepository = async (InquiroPK, InquiroSK, titulo, preguntas) => {
+const actualizarEncuestaRepository = async (InquiroPK, InquiroSK, titulo, preguntas,descripcion) => {
   const params = {
     TableName: TABLE_ENCUESTAS,  
     Key: {
       'InquiroPK': InquiroPK,  
       'InquiroSK': InquiroSK,   
     },
-    UpdateExpression: 'SET titulo = :titulo, preguntas = :preguntas',
+    UpdateExpression: 'SET titulo = :titulo, descripcion = :descripcion, preguntas = :preguntas',
     ExpressionAttributeValues: {
-      ':titulo': titulo,     
+      ':titulo': titulo,
+      ':descripcion':descripcion,     
       ':preguntas': preguntas,  
     },
     ReturnValues: 'ALL_NEW'

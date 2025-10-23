@@ -5,14 +5,14 @@ import generarNuevaEncuesta from "../utils/generarNuevaEncuesta.js"
 //Hoy en dia las validaciones no tienen porque ser tan fuertes. Ya que lo manejaremos nosotros a la app.
 
 const crearEncuestaController = async (req, res) => {
- const { email, titulo, preguntas } = req.body;
+ const { email, titulo, descripcion, preguntas } = req.body;
  const idEncuesta = uuidv4();
 
-  if ( !email || !titulo || !Array.isArray(preguntas) || preguntas.length === 0) {
+  if ( !email || !titulo || !descripcion || !Array.isArray(preguntas) || preguntas.length === 0) {
     return res.status(400).json({ message: 'Datos inválidos' });
   }
 
-  const nuevaEncuesta = generarNuevaEncuesta(email, titulo, preguntas,idEncuesta);
+  const nuevaEncuesta = generarNuevaEncuesta(email, titulo, preguntas,idEncuesta,descripcion);
 
   try {
     const encuestaCreada = await crearEncuestaService(nuevaEncuesta);
@@ -98,14 +98,14 @@ const obtenerEncuestaPorSkGSIController = async (req, res) => {
 };
 
 const actualizarEncuestaController = async (req, res) => {
- const { InquiroPK, InquiroSK, titulo, preguntas } = req.body;
+ const { InquiroPK, InquiroSK, titulo, preguntas, descripcion } = req.body;
 
-  if ( !InquiroPK || !InquiroSK || !titulo || !Array.isArray(preguntas) || preguntas.length === 0 ) {
+  if ( !InquiroPK || !InquiroSK || !titulo || !descripcion || !Array.isArray(preguntas) || preguntas.length === 0 ) {
     return res.status(400).json({ message: 'Datos incompletos para la actualizacion.' });
   }
 
   try {
-    const encuestaNueva = await actualizarEncuestaService(InquiroPK, InquiroSK, titulo, preguntas);
+    const encuestaNueva = await actualizarEncuestaService(InquiroPK, InquiroSK, titulo, preguntas,descripcion);
 
     res.status(200).json({ encuestaNueva });  
   } catch (error) {

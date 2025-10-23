@@ -27,6 +27,9 @@ const encuestasRouter = Router();
  *                       titulo:
  *                         type: string
  *                         example: Sabores
+ *                       descripcion:
+ *                         type: string
+ *                         example: Descripcion prueba
  *                       InquiroPK:
  *                         type: string
  *                         example: email@h.com
@@ -97,13 +100,6 @@ encuestasRouter.get('/email/all', obtenerTodosLosEmailsClienteController)
  *   get:
  *     tags:
  *       - Encuestas
- *     summary: Obtiene una encuesta usando su SK desde el índice GSI
-/**
- * @openapi
- * /encuestas/{sk}:
- *   get:
- *     tags:
- *       - Encuestas
  *     summary: Obtiene una encuesta específica por su SK (GSI)
  *     description: Busca en DynamoDB una encuesta a través del índice secundario global **InquiroSK-index** usando el valor de SK proporcionado.
  *     parameters:
@@ -130,6 +126,9 @@ encuestasRouter.get('/email/all', obtenerTodosLosEmailsClienteController)
  *                       titulo:
  *                         type: string
  *                         example: Sabores
+ *                       descripcion:
+ *                         type: string
+ *                         example: Descripcion prueba
  *                       preguntas:
  *                         type: array
  *                         description: Preguntas que componen la encuesta
@@ -198,6 +197,9 @@ encuestasRouter.get('/:sk', obtenerEncuestaPorSkGSIController)
  *                       titulo:
  *                         type: string
  *                         example: Sabores
+ *                       descripcion:
+ *                         type: string
+ *                         example: Descripcion prueba
  *                       InquiroPK:
  *                         type: string
  *                         example: email@h.com
@@ -271,6 +273,9 @@ encuestasRouter.get('/email/:email', obtenerEncuestasPorPkController)
  *                       titulo:
  *                         type: string
  *                         example: Sabores
+ *                       descripcion:
+ *                         type: string
+ *                         example: Descripcion prueba
  *                       InquiroPK:
  *                         type: string
  *                         example: email@h.com
@@ -314,7 +319,8 @@ encuestasRouter.get('/email/:email/id/:sk', obtenerEncuestaPorSkController)
  *     tags:
  *       - Encuestas
  *     summary: Crea una nueva encuesta
-*     requestBody:
+ *     description: Este endpoint permite crear una nueva encuesta en la base de datos. Se debe enviar el correo electrónico del usuario, un título, una descripción y una lista de preguntas. Cada pregunta puede ser de tipo texto, selección o múltiple elección.
+ *     requestBody:
  *       required: true
  *       content:
  *         application/json:
@@ -323,14 +329,21 @@ encuestasRouter.get('/email/:email/id/:sk', obtenerEncuestaPorSkController)
  *             required:
  *               - email
  *               - titulo
+ *               - descripcion
  *               - preguntas
  *             properties:
  *               email:
  *                 type: string
+ *                 description: Correo electrónico del usuario al que pertenece la encuesta.
  *                 example: mimail@he.com
  *               titulo:
  *                 type: string
+ *                 description: Título de la encuesta.
  *                 example: prueba
+ *               descripcion:
+ *                 type: string
+ *                 description: Descripción breve de la encuesta.
+ *                 example: Encuesta de prueba sobre satisfacción del cliente.
  *               preguntas:
  *                 type: array
  *                 description: Lista de preguntas incluidas en la encuesta.
@@ -339,12 +352,15 @@ encuestasRouter.get('/email/:email/id/:sk', obtenerEncuestaPorSkController)
  *                   properties:
  *                     tipoPregunta:
  *                       type: string
+ *                       description: Tipo de la pregunta (texto, radio, checkbox, etc.)
  *                       example: radio
  *                     pregunta:
  *                       type: string
- *                       example: probando diferentes cosas?
+ *                       description: Enunciado de la pregunta.
+ *                       example: ¿Probando diferentes cosas?
  *                     opciones:
  *                       type: array
+ *                       description: Opciones disponibles (vacías si es de tipo texto).
  *                       items:
  *                         type: string
  *                       example: ["1", "2", "3"]
@@ -366,7 +382,12 @@ encuestasRouter.get('/email/:email/id/:sk', obtenerEncuestaPorSkController)
  *                   example: 1566136b-0a1c-4f5b-90ba-38f67ea55fb2
  *                 titulo:
  *                   type: string
+ *                   description: Título de la encuesta creada.
  *                   example: prueba
+ *                 descripcion:
+ *                   type: string
+ *                   description: Descripción de la encuesta creada.
+ *                   example: Encuesta de prueba sobre satisfacción del cliente.
  *                 preguntas:
  *                   type: array
  *                   description: Lista de preguntas de la encuesta creada.
@@ -378,7 +399,7 @@ encuestasRouter.get('/email/:email/id/:sk', obtenerEncuestaPorSkController)
  *                         example: texto
  *                       pregunta:
  *                         type: string
- *                         example: probando?
+ *                         example: ¿Probando?
  *                       opciones:
  *                         type: array
  *                         items:
@@ -387,11 +408,12 @@ encuestasRouter.get('/email/:email/id/:sk', obtenerEncuestaPorSkController)
  *                 fechaCreacion:
  *                   type: string
  *                   format: date-time
+ *                   description: Fecha de creación de la encuesta.
  *                   example: 2025-10-07T23:26:21.163Z
  *       400:
- *         description: Datos inválidos
+ *         description: Datos inválidos. Faltan campos o el formato es incorrecto.
  *       500:
- *         description: Error interno del servidor
+ *         description: Error interno del servidor.
  */
 encuestasRouter.post('/', crearEncuestaController);
 
@@ -427,6 +449,10 @@ encuestasRouter.post('/', crearEncuestaController);
  *                 type: string
  *                 description: Nuevo título de la encuesta.
  *                 example: MEU XD
+ *               descripcion:
+ *                 type: string
+ *                 description: Nueva descripcion
+ *                 example: Descripcion prueba
  *               preguntas:
  *                 type: array
  *                 description: Lista de preguntas actualizadas.
@@ -457,7 +483,10 @@ encuestasRouter.post('/', crearEncuestaController);
  *                   properties:
  *                     titulo:
  *                       type: string
- *                       example: MEU XD
+ *                       example: Este es un nuevo titulo
+ *                     descripcion:
+ *                       type: string
+ *                       example: Descripcion prueba
  *                     InquiroPK:
  *                       type: string
  *                       example: email@h.com
