@@ -162,7 +162,8 @@ const actualizarEncuestaRepository = async (InquiroPK, InquiroSK, titulo, pregun
     console.error('Error al reemplazar la encuesta:', error.message);
     throw new Error(`Error al reemplazar la encuesta: ${error.message}`);
   }
-};
+}
+
 const eliminarEncuestaRepository = async (InquiroPK, InquiroSK) => {
   const params = {
     TableName: TABLE_ENCUESTAS,

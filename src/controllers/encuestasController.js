@@ -4,14 +4,14 @@ import generarNuevaEncuesta from "../utils/generarNuevaEncuesta.js"
 //Hoy en dia las validaciones no tienen porque ser tan fuertes. Ya que lo manejaremos nosotros a la app.
 
 const crearEncuestaController = async (req, res) => {
- const { email, titulo, preguntas } = req.body;
+ const { email, titulo, descripcion, preguntas } = req.body;
  const idEncuesta = uuidv4();
 
-  if ( !email || !titulo || !Array.isArray(preguntas) || preguntas.length === 0) {
+  if ( !email || !titulo || !descripcion || !Array.isArray(preguntas) || preguntas.length === 0) {
     return res.status(400).json({ message: 'Datos inválidos' });
   }
 
-  const nuevaEncuesta = generarNuevaEncuesta(email, titulo, preguntas,idEncuesta);
+  const nuevaEncuesta = generarNuevaEncuesta(email, titulo, preguntas,idEncuesta,descripcion);
 
   try {
     const encuestaCreada = await crearEncuestaService(nuevaEncuesta);
@@ -148,7 +148,6 @@ const actualizarEncuestaController = async (req, res) => {
     res.status(500).json({ message: `Error al actualizar la encuesta: ${error.message}` });
   }
 };
-
 const eliminarEncuestaController = async (req, res) => {
   try {
     const { pk, sk } = req.params;
@@ -167,6 +166,5 @@ const eliminarEncuestaController = async (req, res) => {
     });
   }
 };
-
 
 export { crearEncuestaController, obtenerTodosLosEmailsClienteController, obtenerTodasLasEncuestasController,obtenerEncuestasPorPkController, obtenerEncuestaPorSkController, obtenerEncuestaPorSkGSIController,actualizarEncuestaController,cambiarEstadoEncuestaController,eliminarEncuestaController };
