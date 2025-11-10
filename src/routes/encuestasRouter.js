@@ -1,7 +1,13 @@
 //Este archivo manejará las rutas para obtención de preguntas y la creación de encuestas nuevas.
 import { Router } from "express";
 import { crearEncuestaController, obtenerTodosLosEmailsClienteController, obtenerTodasLasEncuestasController,obtenerEncuestasPorPkController, obtenerEncuestaPorSkController, obtenerEncuestaPorSkGSIController, actualizarEncuestaController,eliminarEncuestaController, cambiarEstadoEncuestaController } from "../controllers/encuestasController.js"
-
+import { 
+  analizarEncuestaController, 
+  obtenerEstadisticasController,
+  obtenerHistorialAnalisisController,
+  obtenerUltimoAnalisisController,
+  obtenerDatosGraficosController
+} from "../controllers/analisisController.js";
 const encuestasRouter = Router();
 /**
  * @openapi
@@ -614,5 +620,189 @@ encuestasRouter.delete('/:pk/:sk', eliminarEncuestaController);
  *         description: Error interno del servidor.
  */
 encuestasRouter.put('/estado', cambiarEstadoEncuestaController);
+/**
+ * @openapi
+ * /encuestas/analizar/{encuestaId}:
+ *   post:
+ *     tags:
+ *       - Análisis IA
+ *     summary: Analiza las respuestas de una encuesta usando inteligencia artificial
+ *     description: Envía las respuestas y preguntas de una encuesta al servicio de IA (Groq o DeepSeek) para generar un análisis textual detallado.
+ *     parameters:
+ *       - name: encuestaId
+ *         in: path
+ *         required: true
+ *         description: ID de la encuesta a analizar.
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               encuesta:
+ *                 type: object
+ *                 description: Datos de la encuesta, incluyendo título y preguntas.
+ *               respuestas:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   description: Respuestas individuales de los usuarios.
+ *     responses:
+ *       200:
+ *         description: Análisis generado correctamente por la IA.
+ *       400:
+ *         description: Error en los datos enviados.
+ *       500:
+ *         description: Error interno al comunicarse con la IA.
+ */
+
+encuestasRouter.get('/encuesta/:encuestaId/analizar', analizarEncuestaController);
+/**
+ * @openapi
+ * /encuestas/analizar-rapido/{encuestaId}:
+ *   post:
+ *     tags:
+ *       - Análisis IA
+ *     summary: Realiza un análisis rápido de una encuesta
+ *     description: Similar a `/analizar`, pero utiliza un modelo optimizado para velocidad. Ideal para obtener un resumen rápido de resultados.
+ *     parameters:
+ *       - name: encuestaId
+ *         in: path
+ *         required: true
+ *         description: ID de la encuesta a analizar.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Análisis rápido completado correctamente.
+ *       500:
+ *         description: Error al procesar el análisis rápido.
+ */
+
+encuestasRouter.get('/encuesta/:encuestaId/analizar-rapido', (req, res) => {
+  req.query.tipo = 'rapido';
+  return analizarEncuestaController(req, res);
+});
+/**
+ * @openapi
+ * /encuestas/analizar-forzar/{encuestaId}:
+ *   post:
+ *     tags:
+ *       - Análisis IA
+ *     summary: Fuerza un nuevo análisis de la encuesta ignorando caché previo
+ *     description: Genera un nuevo análisis de la encuesta, incluso si ya existe un análisis anterior almacenado.
+ *     parameters:
+ *       - name: encuestaId
+ *         in: path
+ *         required: true
+ *         description: ID de la encuesta.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Nuevo análisis generado correctamente.
+ *       500:
+ *         description: Error interno al procesar el nuevo análisis.
+ */
+
+encuestasRouter.get('/encuesta/:encuestaId/analizar-forzar', (req, res) => {
+  req.query.forzar = 'true';
+  return analizarEncuestaController(req, res);
+});
+/**
+ * @openapi
+ * /encuestas/estadisticas/{encuestaId}:
+ *   get:
+ *     tags:
+ *       - Análisis IA
+ *     summary: Obtiene estadísticas cuantitativas de una encuesta
+ *     description: Devuelve datos estadísticos (porcentajes, promedios, conteos) calculados a partir de las respuestas.
+ *     parameters:
+ *       - name: encuestaId
+ *         in: path
+ *         required: true
+ *         description: ID de la encuesta.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Estadísticas devueltas correctamente.
+ *       404:
+ *         description: No se encontraron respuestas para la encuesta.
+ */
+
+encuestasRouter.get('/encuesta/:encuestaId/estadisticas', obtenerEstadisticasController);
+/**
+ * @openapi
+ * /encuestas/historial/{encuestaId}:
+ *   get:
+ *     tags:
+ *       - Análisis IA
+ *     summary: Obtiene el historial de análisis generados para una encuesta
+ *     description: Retorna todos los análisis previos realizados sobre una encuesta determinada.
+ *     parameters:
+ *       - name: encuestaId
+ *         in: path
+ *         required: true
+ *         description: ID de la encuesta.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Historial de análisis obtenido correctamente.
+ *       404:
+ *         description: No se encontraron análisis previos.
+ */
+
+
+encuestasRouter.get('/encuesta/:encuestaId/historial', obtenerHistorialAnalisisController);
+/**
+ * @openapi
+ * /encuestas/graficos/{encuestaId}:
+ *   get:
+ *     tags:
+ *       - Análisis IA
+ *     summary: Obtiene los datos preparados para visualizaciones gráficas
+ *     description: Devuelve información estadística lista para ser graficada (barras, tortas, etc.).
+ *     parameters:
+ *       - name: encuestaId
+ *         in: path
+ *         required: true
+ *         description: ID de la encuesta.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Datos de gráficos obtenidos correctamente.
+ *       404:
+ *         description: No hay datos disponibles para graficar.
+ */
+
+encuestasRouter.get('/encuesta/:encuestaId/graficos', obtenerDatosGraficosController);
+/**
+ * @openapi
+ * /encuestas/ultimo-analisis/{encuestaId}:
+ *   get:
+ *     tags:
+ *       - Análisis IA
+ *     summary: Obtiene el último análisis generado para una encuesta
+ *     description: Devuelve el resultado más reciente generado por la IA para la encuesta solicitada.
+ *     parameters:
+ *       - name: encuestaId
+ *         in: path
+ *         required: true
+ *         description: ID de la encuesta.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Último análisis encontrado y devuelto correctamente.
+ *       404:
+ *         description: No existe un análisis previo para la encuesta.
+ */
+encuestasRouter.get('/encuesta/:encuestaId/ultimo-analisis', obtenerUltimoAnalisisController);
 
 export default encuestasRouter;
