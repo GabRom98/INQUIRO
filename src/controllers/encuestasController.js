@@ -1,7 +1,6 @@
-import { crearEncuestaService, obtenerTodosLosEmailsClienteService,obtenerTodasLasEncuestasService,obtenerEncuestasPorPkService, obtenerEncuestaPorSkService, obtenerEncuestaPorSkGSIService, actualizarEncuestaService } from '../service/encuestasService.js';
+import { crearEncuestaService,cambiarEstadoEncuestaService,eliminarEncuestaService, obtenerTodosLosEmailsClienteService,obtenerTodasLasEncuestasService,obtenerEncuestasPorPkService, obtenerEncuestaPorSkService, obtenerEncuestaPorSkGSIService, actualizarEncuestaService } from '../service/encuestasService.js';
 import { v4 as uuidv4 } from "uuid"
 import generarNuevaEncuesta from "../utils/generarNuevaEncuesta.js"
-
 //Hoy en dia las validaciones no tienen porque ser tan fuertes. Ya que lo manejaremos nosotros a la app.
 
 const crearEncuestaController = async (req, res) => {
@@ -96,21 +95,76 @@ const obtenerEncuestaPorSkGSIController = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-const actualizarEncuestaController = async (req, res) => {
- const { InquiroPK, InquiroSK, titulo, preguntas, descripcion } = req.body;
-
-  if ( !InquiroPK || !InquiroSK || !titulo || !descripcion || !Array.isArray(preguntas) || preguntas.length === 0 ) {
-    return res.status(400).json({ message: 'Datos incompletos para la actualizacion.' });
-  }
-
+const cambiarEstadoEncuestaController = async (req, res) => {
   try {
-    const encuestaNueva = await actualizarEncuestaService(InquiroPK, InquiroSK, titulo, preguntas,descripcion);
+    const { pk, sk, nuevoEstado } = req.body;
 
-    res.status(200).json({ encuestaNueva });  
+    if (!pk || !sk || !nuevoEstado) {
+      return res.status(400).json({
+        message: "Faltan datos: pk, sk o nuevoEstado son requeridos.",
+      });
+    }
+
+    const estadosPermitidos = ["pausada", "cerrada"];
+    if (!estadosPermitidos.includes(nuevoEstado)) {
+      return res.status(400).json({
+        message: "Estado inválido. Solo se permite 'pausada' o 'cerrada'.",
+      });
+    }
+
+    const encuestaActualizada = await cambiarEstadoEncuestaService(pk, sk, nuevoEstado);
+
+    res.status(200).json({
+      message: `Encuesta ${nuevoEstado} correctamente.`,
+      data: encuestaActualizada,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: `Error al cambiar el estado de la encuesta: ${error.message}`,
+    });
   }
 };
 
-export { crearEncuestaController, obtenerTodosLosEmailsClienteController, obtenerTodasLasEncuestasController,obtenerEncuestasPorPkController, obtenerEncuestaPorSkController, obtenerEncuestaPorSkGSIController,actualizarEncuestaController };
+const actualizarEncuestaController = async (req, res) => {
+  try {
+    const { pk, sk } = req.params;
+    const { titulo, preguntas } = req.body;
+
+    if (!pk || !sk) {
+      return res.status(400).json({ message: 'Faltan parámetros: pk o sk.' });
+    }
+
+    if (!titulo && !preguntas) {
+      return res.status(400).json({ message: 'Debe proporcionar al menos un campo para actualizar.' });
+    }
+
+    const encuestaNueva = await actualizarEncuestaService(pk, sk, titulo, preguntas);
+
+    res.status(200).json({
+      message: 'Encuesta actualizada correctamente.',
+      encuestaNueva
+    });
+  } catch (error) {
+    res.status(500).json({ message: `Error al actualizar la encuesta: ${error.message}` });
+  }
+};
+const eliminarEncuestaController = async (req, res) => {
+  try {
+    const { pk, sk } = req.params;
+
+    if (!pk || !sk) {
+      return res.status(400).json({ message: 'Faltan parámetros: pk o sk.' });
+    }
+
+    await eliminarEncuestaService(pk, sk);
+
+    res.status(200).json({ message: 'Encuesta eliminada correctamente.' });
+  } catch (error) {
+    console.error('Error al eliminar la encuesta:', error);
+    res.status(500).json({
+      message: `Error al eliminar la encuesta: ${error.message}`,
+    });
+  }
+};
+
+export { crearEncuestaController, obtenerTodosLosEmailsClienteController, obtenerTodasLasEncuestasController,obtenerEncuestasPorPkController, obtenerEncuestaPorSkController, obtenerEncuestaPorSkGSIController,actualizarEncuestaController,cambiarEstadoEncuestaController,eliminarEncuestaController };

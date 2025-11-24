@@ -1,6 +1,6 @@
 //Este archivo manejará las rutas para obtención de preguntas y la creación de encuestas nuevas.
 import { Router } from "express";
-import { crearEncuestaController, obtenerTodosLosEmailsClienteController, obtenerTodasLasEncuestasController,obtenerEncuestasPorPkController, obtenerEncuestaPorSkController, obtenerEncuestaPorSkGSIController, actualizarEncuestaController } from "../controllers/encuestasController.js"
+import { crearEncuestaController, obtenerTodosLosEmailsClienteController, obtenerTodasLasEncuestasController,obtenerEncuestasPorPkController, obtenerEncuestaPorSkController, obtenerEncuestaPorSkGSIController, actualizarEncuestaController,eliminarEncuestaController, cambiarEstadoEncuestaController } from "../controllers/encuestasController.js"
 
 const encuestasRouter = Router();
 /**
@@ -236,26 +236,20 @@ encuestasRouter.get('/email/:email', obtenerEncuestasPorPkController)
 
 /**
  * @openapi
- * /encuestas/email/{email}/id/{sk}:
+ * /encuestas/{sk}:
  *   get:
  *     tags:
  *       - Encuestas
- *     summary: Obtiene una encuesta específica por email y SK
+ *     summary: Obtiene una encuesta específica por su SK (GSI)
+ *     description: Busca en DynamoDB una encuesta a través del índice secundario global **InquiroSK-index** usando el valor de SK proporcionado.
  *     parameters:
- *       - name: email
- *         in: path
- *         required: true
- *         description: Correo electrónico asociado a la encuesta.
- *         schema:
- *           type: string
- *           example: email@h.com
  *       - name: sk
  *         in: path
  *         required: true
  *         description: Identificador único (Sort Key) de la encuesta.
  *         schema:
  *           type: string
- *           example: 65ba9d5a-cf6d-4524-ab2d-d6041582e998
+ *           example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
  *     responses:
  *       200:
  *         description: Encuesta obtenida correctamente.
@@ -266,13 +260,13 @@ encuestasRouter.get('/email/:email', obtenerEncuestasPorPkController)
  *               properties:
  *                 encuesta:
  *                   type: array
- *                   description: Lista con una encuesta (si existe)
  *                   items:
  *                     type: object
  *                     properties:
  *                       titulo:
  *                         type: string
  *                         example: Sabores
+
  *                       descripcion:
  *                         type: string
  *                         example: Descripcion prueba
@@ -300,16 +294,25 @@ encuestasRouter.get('/email/:email', obtenerEncuestasPorPkController)
  *                               items:
  *                                 type: string
  *                               example: ["azul", "verde", "rojo"]
+ *                       InquiroPK:
+ *                         type: string
+ *                         description: Clave primaria (email del cliente)
+ *                         example: email@h.com
+ *                       fechaCreacion:
+ *                         type: string
+ *                         format: date-time
+ *                         example: 2025-10-05T18:57:47.675Z
  *                       InquiroSK:
  *                         type: string
+ *                         description: Clave de ordenamiento (UUID único)
  *                         example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
  *       400:
- *         description: Datos inválidos
- *       404:
- *         description: No se encontró la encuesta
+ *         description: Parámetro SK inválido.
  *       500:
- *         description: Error interno
+ *         description: Error interno del servidor.
  */
+encuestasRouter.get('/:sk', obtenerEncuestaPorSkGSIController);
+
 encuestasRouter.get('/email/:email/id/:sk', obtenerEncuestaPorSkController)
 
 /**
@@ -416,35 +419,36 @@ encuestasRouter.get('/email/:email/id/:sk', obtenerEncuestaPorSkController)
  *         description: Error interno del servidor.
  */
 encuestasRouter.post('/', crearEncuestaController);
-
 /**
  * @openapi
- * /encuestas:
+ * /encuestas/{pk}/{sk}:
  *   put:
  *     tags:
  *       - Encuestas
  *     summary: Actualiza una encuesta existente
-*     description: Actualiza los datos de una encuesta existente en DynamoDB. Se requiere pasar la PK (email del cliente) y SK (UUID único de la encuesta), además del nuevo título y las preguntas modificadas.
+ *     description: Permite modificar el título, las preguntas o las opciones de una encuesta ya registrada en DynamoDB, identificada por su PK (correo) y SK (UUID).
+ *     parameters:
+ *       - name: pk
+ *         in: path
+ *         required: true
+ *         description: Clave primaria del usuario (correo electrónico).
+ *         schema:
+ *           type: string
+ *           example: usuario@ejemplo.com
+ *       - name: sk
+ *         in: path
+ *         required: true
+ *         description: Clave de ordenamiento única (UUID) de la encuesta.
+ *         schema:
+ *           type: string
+ *           example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - InquiroPK
- *               - InquiroSK
- *               - titulo
- *               - preguntas
  *             properties:
- *               InquiroPK:
- *                 type: string
- *                 description: Clave primaria (email del cliente).
- *                 example: email@h.com
- *               InquiroSK:
- *                 type: string
- *                 description: Clave de ordenamiento (UUID de la encuesta).
- *                 example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
  *               titulo:
  *                 type: string
  *                 description: Nuevo título de la encuesta.
@@ -453,6 +457,7 @@ encuestasRouter.post('/', crearEncuestaController);
  *                 type: string
  *                 description: Nueva descripcion
  *                 example: Descripcion prueba
+>>>>>>> ac10c00b160865074e6f9e91a424427da500d7e4
  *               preguntas:
  *                 type: array
  *                 description: Lista de preguntas actualizadas.
@@ -461,15 +466,15 @@ encuestasRouter.post('/', crearEncuestaController);
  *                   properties:
  *                     tipoPregunta:
  *                       type: string
- *                       example: hola
+ *                       example: radio
  *                     pregunta:
  *                       type: string
- *                       example: Que haces hoy?
+ *                       example: ¿Cuál es tu color favorito?
  *                     opciones:
  *                       type: array
  *                       items:
  *                         type: string
- *                       example: [1]
+ *                       example: ["Rojo", "Verde", "Azul"]
  *     responses:
  *       200:
  *         description: Encuesta actualizada correctamente.
@@ -478,7 +483,10 @@ encuestasRouter.post('/', crearEncuestaController);
  *             schema:
  *               type: object
  *               properties:
- *                 encuestaNueva:
+ *                 message:
+ *                   type: string
+ *                   example: Encuesta actualizada correctamente.
+ *                 encuesta:
  *                   type: object
  *                   properties:
  *                     titulo:
@@ -487,38 +495,124 @@ encuestasRouter.post('/', crearEncuestaController);
  *                     descripcion:
  *                       type: string
  *                       example: Descripcion prueba
+>>>>>>> ac10c00b160865074e6f9e91a424427da500d7e4
  *                     InquiroPK:
  *                       type: string
- *                       example: email@h.com
- *                     fechaCreacion:
- *                       type: string
- *                       format: date-time
- *                       example: 2025-10-05T18:57:47.675Z
- *                     preguntas:
- *                       type: array
- *                       description: Preguntas actualizadas de la encuesta.
- *                       items:
- *                         type: object
- *                         properties:
- *                           tipoPregunta:
- *                             type: string
- *                             example: hola
- *                           pregunta:
- *                             type: string
- *                             example: Que haces hoy?
- *                           opciones:
- *                             type: array
- *                             items:
- *                               type: string
- *                             example: [1]
+ *                       example: usuario@ejemplo.com
  *                     InquiroSK:
  *                       type: string
  *                       example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
+ *                     fechaActualizacion:
+ *                       type: string
+ *                       format: date-time
+ *                       example: 2025-10-05T18:57:47.675Z
  *       400:
- *         description: Datos incompletos para la actualización
+ *         description: Datos inválidos o encuesta inexistente.
  *       500:
- *         description: Error interno del servidor
+ *         description: Error interno del servidor.
  */
-encuestasRouter.put('/', actualizarEncuestaController)
+encuestasRouter.put('/:pk/:sk', actualizarEncuestaController);
+
+/**
+ * @openapi
+ * /encuestas/{pk}/{sk}:
+ *   delete:
+ *     tags:
+ *       - Encuestas
+ *     summary: Elimina una encuesta existente
+ *     description: Borra una encuesta de DynamoDB según el correo electrónico (PK) y el identificador único (SK).
+ *     parameters:
+ *       - name: pk
+ *         in: path
+ *         required: true
+ *         description: Clave primaria (correo electrónico del usuario).
+ *         schema:
+ *           type: string
+ *           example: usuario@ejemplo.com
+ *       - name: sk
+ *         in: path
+ *         required: true
+ *         description: Clave de ordenamiento (UUID) de la encuesta.
+ *         schema:
+ *           type: string
+ *           example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
+ *     responses:
+ *       200:
+ *         description: Encuesta eliminada correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Encuesta eliminada correctamente.
+ *       404:
+ *         description: Encuesta no encontrada.
+ *       500:
+ *         description: Error interno del servidor.
+ */
+encuestasRouter.delete('/:pk/:sk', eliminarEncuestaController);
+
+/**
+ * @openapi
+ * /encuestas/estado:
+ *   put:
+ *     tags:
+ *       - Encuestas
+ *     summary: Cambia el estado de una encuesta
+ *     description: Actualiza el campo **estado** (por ejemplo, “activa”, “inactiva”, “finalizada”) de una encuesta específica en DynamoDB.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - pk
+ *               - sk
+ *               - nuevoEstado
+ *             properties:
+ *               pk:
+ *                 type: string
+ *                 description: Correo electrónico del usuario dueño de la encuesta.
+ *                 example: usuario@ejemplo.com
+ *               sk:
+ *                 type: string
+ *                 description: Identificador único (UUID) de la encuesta.
+ *                 example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
+ *               nuevoEstado:
+ *                 type: string
+ *                 description: Estado nuevo que se asignará a la encuesta.
+ *                 example: inactiva
+ *     responses:
+ *       200:
+ *         description: Estado de la encuesta actualizado correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Estado actualizado a "inactiva".
+ *                 encuesta:
+ *                   type: object
+ *                   properties:
+ *                     InquiroPK:
+ *                       type: string
+ *                       example: usuario@ejemplo.com
+ *                     InquiroSK:
+ *                       type: string
+ *                       example: 312bc281-f0c0-4b14-b5ec-b2b2edf2a1ac
+ *                     estado:
+ *                       type: string
+ *                       example: inactiva
+ *       400:
+ *         description: Datos inválidos o encuesta inexistente.
+ *       500:
+ *         description: Error interno del servidor.
+ */
+encuestasRouter.put('/estado', cambiarEstadoEncuestaController);
 
 export default encuestasRouter;

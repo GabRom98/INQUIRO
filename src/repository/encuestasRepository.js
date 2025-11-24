@@ -1,6 +1,6 @@
 import { dynamodb } from "../../inquiroDB.js"
 
-const TABLE_ENCUESTAS = process.env.DYNAMODB_TABLE_ENCUESTAS;
+const TABLE_ENCUESTAS = process.env.DYNAMODB_TABLE_ENCUESTAS
 
 const crearEncuestaRepository = async (encuestaData) => {
   console.log(TABLE_ENCUESTAS)
@@ -113,19 +113,42 @@ const obtenerEncuestaPorSkGSIRepository= async (sk) => {
     throw new Error(`Error al obtener la encuesta por SK ${sk} : ${error.message}`);
   }
 };
+const cambiarEstadoEncuestaRepository = async (InquiroPK, InquiroSK, nuevoEstado) => {
+  const params = {
+    TableName: TABLE_ENCUESTAS,
+    Key: {
+      InquiroPK,
+      InquiroSK,
+    },
+    UpdateExpression: "SET #estado = :nuevoEstado",
+    ExpressionAttributeNames: {
+      "#estado": "estado",
+    },
+    ExpressionAttributeValues: {
+      ":nuevoEstado": nuevoEstado,
+    },
+    ReturnValues: "ALL_NEW",
+  };
 
+  try {
+    const result = await dynamodb.update(params).promise();
+    return result.Attributes;
+  } catch (error) {
+    console.error(`Error al cambiar estado de encuesta (${InquiroSK}):`, error.message);
+    throw new Error(`Error al cambiar estado de encuesta: ${error.message}`);
+  }
+};
 
-const actualizarEncuestaRepository = async (InquiroPK, InquiroSK, titulo, preguntas,descripcion) => {
+const actualizarEncuestaRepository = async (InquiroPK, InquiroSK, titulo, preguntas) => {
   const params = {
     TableName: TABLE_ENCUESTAS,  
     Key: {
       'InquiroPK': InquiroPK,  
       'InquiroSK': InquiroSK,   
     },
-    UpdateExpression: 'SET titulo = :titulo, descripcion = :descripcion, preguntas = :preguntas',
+    UpdateExpression: 'SET titulo = :titulo, preguntas = :preguntas',
     ExpressionAttributeValues: {
-      ':titulo': titulo,
-      ':descripcion':descripcion,     
+      ':titulo': titulo,     
       ':preguntas': preguntas,  
     },
     ReturnValues: 'ALL_NEW'
@@ -139,6 +162,24 @@ const actualizarEncuestaRepository = async (InquiroPK, InquiroSK, titulo, pregun
     console.error('Error al reemplazar la encuesta:', error.message);
     throw new Error(`Error al reemplazar la encuesta: ${error.message}`);
   }
+}
+
+const eliminarEncuestaRepository = async (InquiroPK, InquiroSK) => {
+  const params = {
+    TableName: TABLE_ENCUESTAS,
+    Key: {
+      InquiroPK,
+      InquiroSK,
+    },
+  };
+
+  try {
+    await dynamodb.delete(params).promise();
+    return true;
+  } catch (error) {
+    throw new Error(`Error al eliminar la encuesta en la base de datos: ${error.message}`);
+  }
 };
 
-export { crearEncuestaRepository, obtenerEncuestasPorPkRepository, obtenerTodasLasEncuestasRepository,obtenerEncuestaPorSkRepository,obtenerEncuestaPorSkGSIRepository, actualizarEncuestaRepository, obtenerTodosLosEmailsClienteRepository };
+
+export { crearEncuestaRepository,cambiarEstadoEncuestaRepository, obtenerEncuestasPorPkRepository, obtenerTodasLasEncuestasRepository,obtenerEncuestaPorSkRepository,obtenerEncuestaPorSkGSIRepository, actualizarEncuestaRepository, obtenerTodosLosEmailsClienteRepository,eliminarEncuestaRepository };
